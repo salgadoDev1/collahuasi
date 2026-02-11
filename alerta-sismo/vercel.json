@@ -1,0 +1,8 @@
+{
+    "crons": [
+        {
+            "path": "/api/sismo",
+            "schedule": "0 1 * * *"
+        }
+    ]
+}

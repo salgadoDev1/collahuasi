@@ -1,0 +1,16 @@
+{
+  "name": "sismo_alert",
+  "version": "1.0.0",
+  "description": "Sistema de alertas de sismos cerca de Mina Collahuasi",
+  "main": "sismo_alert.js",
+  "scripts": {
+    "start": "node sismo_alert.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "cheerio": "^1.1.2",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.13"
+  }
+}
