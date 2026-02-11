@@ -19,8 +19,7 @@ const allowedOrigins = [
   'http://localhost:3001',
   'https://ac77-167-249-29-213.ngrok-free.app',
   'https://ac77-167-249-29-213.ngrok-free.app:443',
-  // PASO A PRODUCCIÓN: Reemplazar con tu dominio real, ej. "https://dashboard.tu-dominio.com"
-  // 'https://tu-dominio-produccion.com',
+  process.env.CLIENT_ORIGIN,
 ];
 
 app.use(
@@ -48,8 +47,8 @@ if (process.env.DISABLE_CSRF !== 'true') {
   const csrfProtection = csrf({
     cookie: {
       httpOnly: false,
-      secure: false, // PASO A PRODUCCIÓN: Cambiar a secure: true para HTTPS
-      sameSite: 'Lax', // PASO A PRODUCCIÓN: Considerar "Strict" para máxima seguridad
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
     },
   });
   app.use(csrfProtection);
@@ -57,8 +56,8 @@ if (process.env.DISABLE_CSRF !== 'true') {
   app.get('/api/csrf-token', (req, res) => {
     res.cookie('XSRF-TOKEN', req.csrfToken(), {
       httpOnly: false,
-      secure: false, // PASO A PRODUCCIÓN: Cambiar a secure: true para HTTPS
-      sameSite: 'Lax', // PASO A PRODUCCIÓN: Considerar "Strict"
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
     });
     res.status(200).json({ success: true });
   });
@@ -112,8 +111,8 @@ app.get('/api/me', authMiddleware, (req, res) => {
 app.post('/api/logout', (req, res) => {
   res.clearCookie('jwt', {
     httpOnly: true,
-    secure: false, // PASO A PRODUCCIÓN: Cambiar a secure: true para HTTPS
-    sameSite: 'Lax', // PASO A PRODUCCIÓN: Considerar "Strict"
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
   });
   res.status(200).json({ success: true, message: 'Sesión cerrada' });
 });
