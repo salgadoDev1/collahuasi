@@ -6,12 +6,19 @@ const dbConfig = {
   server: process.env.DB_SERVER,
   database: process.env.DB_NAME,
 
-  requestTimeout: 60000,
+  requestTimeout: 120000, // 120 seconds
+  connectionTimeout: 60000, // 60 seconds
 
   options: {
     encrypt: true,
     trustServerCertificate: false,
+    enableArithAbort: true,
   },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000
+  }
 };
 
 let poolPromise;
