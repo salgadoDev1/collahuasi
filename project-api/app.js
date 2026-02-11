@@ -17,24 +17,26 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://ac77-167-249-29-213.ngrok-free.app',
-  'https://ac77-167-249-29-213.ngrok-free.app:443',
+  'https://collahuasidash.vercel.app',
+  'https://collahuasi-dashboard-five.vercel.app',
   process.env.CLIENT_ORIGIN,
-];
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Permitir si no hay origen (como en Postman) o si está en la lista blanca
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         callback(null, true);
       } else {
         console.warn('Bloqueado por CORS:', origin);
-        callback(new Error('No autorizado por CORS'));
+        callback(null, false); // No tirar error, solo no permitirlo
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-XSRF-TOKEN'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-XSRF-TOKEN', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Set-Cookie'],
   }),
 );
 
@@ -47,8 +49,8 @@ if (process.env.DISABLE_CSRF !== 'true') {
   const csrfProtection = csrf({
     cookie: {
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
+      secure: true,
+      sameSite: 'None',
     },
   });
   app.use(csrfProtection);
@@ -56,8 +58,8 @@ if (process.env.DISABLE_CSRF !== 'true') {
   app.get('/api/csrf-token', (req, res) => {
     res.cookie('XSRF-TOKEN', req.csrfToken(), {
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
+      secure: true,
+      sameSite: 'None',
     });
     res.status(200).json({ success: true });
   });
