@@ -103,7 +103,12 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Error crítico en el login:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

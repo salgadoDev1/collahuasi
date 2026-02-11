@@ -16,8 +16,12 @@ const dbConfig = {
 
 async function connectToDatabase() {
   try {
-    await sql.connect(dbConfig);
+    if (sql.globalConnection && sql.globalConnection.connected) {
+      return sql.globalConnection;
+    }
+    const pool = await sql.connect(dbConfig);
     console.log('Conexión exitosa a la base de datos');
+    return pool;
   } catch (error) {
     console.error('Error al conectar a la base de datos:', error);
     throw error;
