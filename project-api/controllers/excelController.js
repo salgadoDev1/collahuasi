@@ -184,8 +184,10 @@ const processExcelFile = (
     hidden: true,
   });
 
+  console.log(`[processExcelFile] Hoja: ${sheetName}, Range Detectado: ${sheet['!ref']}, Custom Range: StartCol=${startCol}, EndCol=${range.e.c}, Data Length: ${data.length}`);
+
   if (data.length === 0) {
-    throw new Error(`La hoja "${sheetName}" está vacía`);
+    throw new Error(`La hoja "${sheetName}" está vacía o no tiene datos a partir de la columna ${startCol === 116 ? 'DM' : 'A'}`);
   }
 
   const filteredData = maxRows ? data.slice(0, maxRows) : data;
@@ -254,8 +256,10 @@ const processNewExcelFile = (
     hidden: true,
   });
 
+  console.log(`[processNewExcelFile] Hoja: ${sheetName}, Range Detectado: ${sheet['!ref']}, Custom Range: Col 56 to 114, Data Length: ${data.length}`);
+
   if (data.length === 0) {
-    throw new Error(`La hoja "${sheetName}" está vacía`);
+    throw new Error(`La hoja "${sheetName}" está vacía en el rango de columnas BE a DJ (56-114)`);
   }
 
   const limitedData = maxRows ? data.slice(0, maxRows) : data;
@@ -303,8 +307,7 @@ exports.uploadExcel = async (req, res) => {
 
       if (filaActual['Origen2(Rajo)'] === 'MovimientosEspeciales') {
         console.warn(
-          `Fila ${
-            i + 1
+          `Fila ${i + 1
           } contiene 'MovimientosEspeciales' en 'Origen2(Rajo)'. Se detiene la inserción.`,
         );
         break;
@@ -312,14 +315,12 @@ exports.uploadExcel = async (req, res) => {
 
       if (!filaActual.Fecha) {
         console.warn(
-          `Fila ${
-            i + 2
+          `Fila ${i + 2
           } en DATOS PIVOTE no tiene campo 'Fecha'. Proceso detenido.`,
         );
         return res.status(400).json({
-          message: `Falta el campo 'Fecha' en la fila ${
-            i + 2
-          } de DATOS PIVOTE. No se insertaron datos.`,
+          message: `Falta el campo 'Fecha' en la fila ${i + 2
+            } de DATOS PIVOTE. No se insertaron datos.`,
           filaError: i + 2,
         });
       }
