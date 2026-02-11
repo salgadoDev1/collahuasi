@@ -43,11 +43,8 @@ const AppRoutes = () => {
       }
     };
     // Solo llama a fetchUser si no está en rutas públicas
-    if (
-      !["/", "/forgot-password", "/reset-password", "/logout"].includes(
-        location.pathname
-      )
-    ) {
+    const publicPaths = ["/", "/login", "/forgot-password", "/reset-password", "/logout"];
+    if (!publicPaths.includes(location.pathname)) {
       fetchUser();
     } else {
       setIsAuthenticated(false);

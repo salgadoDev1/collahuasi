@@ -64,6 +64,18 @@ const mesOptions = {
   12: "Diciembre",
 };
 
+const safeFormat = (dateValue, formatStr = "dd-MM-yyyy") => {
+  if (!dateValue) return "-";
+  const d = new Date(dateValue);
+  if (isNaN(d.getTime())) return "-";
+  try {
+    return format(d, formatStr);
+  } catch (e) {
+    console.error("Error formatting date:", dateValue, e);
+    return "-";
+  }
+};
+
 export default function Dashboard() {
   const [añoReporte1, setAñoReporte1] = useState(new Date().getFullYear());
   const [mesReporte1, setMesReporte1] = useState(new Date().getMonth() + 1);
@@ -1880,24 +1892,24 @@ export default function Dashboard() {
   }, [sortedMoviminData]);
 
   const fechasReporte3 = sortedPlantaData.map((row) =>
-    format(new Date(row.Fecha), "dd-MM-yyyy")
+    safeFormat(row.Fecha)
   );
 
   const tonPlanta = sortedPlantaData.map((row) => row.Ton ?? 0);
   const cutPlanta = sortedPlantaData.map((row) => row.CuT ?? 0);
 
   const tonMovimin = sortedPlantaData.map((plantaRow) => {
-    const fechaStr = format(new Date(plantaRow.Fecha), "dd-MM-yyyy");
+    const fechaStr = safeFormat(plantaRow.Fecha);
     const moviminRow = sortedMoviminData.find(
-      (mov) => format(new Date(mov.fecha), "dd-MM-yyyy") === fechaStr
+      (mov) => safeFormat(mov.fecha) === fechaStr
     );
     return moviminRow ? moviminRow.ton ?? 0 : 0;
   });
 
   const cutMovimin = sortedPlantaData.map((plantaRow) => {
-    const fechaStr = format(new Date(plantaRow.Fecha), "dd-MM-yyyy");
+    const fechaStr = safeFormat(plantaRow.Fecha);
     const moviminRow = sortedMoviminData.find(
-      (mov) => format(new Date(mov.fecha), "dd-MM-yyyy") === fechaStr
+      (mov) => safeFormat(mov.fecha) === fechaStr
     );
     return moviminRow ? moviminRow.cut ?? 0 : 0;
   });
