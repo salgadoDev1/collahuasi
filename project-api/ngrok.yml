@@ -1,0 +1,13 @@
+version: "2"
+authtoken: 2dKUoSREloTlZ2Me6ai8tNkhcUT_2vV8iBpAtDxpvDBivnGWK
+
+tunnels:
+  frontend:
+    addr: 3001
+    proto: http
+  backend:
+    addr: 3000
+    proto: http
+
+
+https://ac77-167-249-29-213.ngrok-free.app

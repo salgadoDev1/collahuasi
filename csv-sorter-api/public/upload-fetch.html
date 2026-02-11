@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Subir CSV con Filtro por Fecha</title>
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600&display=swap" rel="stylesheet">
+  <style>
+    /* Reset y estilos básicos */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      font-family: 'Open Sans', sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #333;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 550px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+      background: #fff;
+      border-radius: 6px;
+      margin-top: 80px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+      color: #2a5298;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    label {
+      font-size: 0.95rem;
+      text-align: left;
+      color: #555;
+    }
+    input[type="file"],
+    input[type="date"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fafafa;
+      color: #333;
+    }
+    button {
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 4px;
+      background: #2a5298;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #233f68;
+    }
+    #downloadLink a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #3b79c2;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    #downloadLink a:hover {
+      background: #3268a4;
+    }
+    /* Estilo para la pantalla de carga */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0s, opacity 0.3s;
+    }
+    #loadingOverlay.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+    .spinner {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #2a5298;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Pantalla de carga -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <p>Cargando, por favor espere...</p>
+  </div>
+  
+  <div class="container">
+    <h1>Subir CSV</h1>
+    <form id="uploadForm">
+      <label for="csvFile">Selecciona el archivo CSV:</label>
+      <input type="file" id="csvFile" name="csvFile" accept=".csv" required>
+
+      <label for="filterDate">Fecha para filtrar (opcional):</label>
+      <!-- Input de tipo date. El valor viene en "YYYY-MM-DD" -->
+      <input type="date" id="filterDate" name="fecha" placeholder="AAAA-MM-DD">
+
+      <button type="submit">Subir CSV</button>
+    </form>
+    <div id="downloadLink"></div>
+  </div>
+
+  <!-- Importar Moment.js para formatear la fecha -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script>
+    const uploadForm = document.getElementById("uploadForm");
+    const downloadDiv = document.getElementById("downloadLink");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const dateInput = document.getElementById("filterDate");
+
+    uploadForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      loadingOverlay.classList.add("visible");
+
+      // Crear FormData (se enviará el archivo CSV, pero la fecha la enviaremos en la URL)
+      const formData = new FormData(uploadForm);
+      // Borrar el campo 'fecha' del FormData (para que no se envíe por el body)
+      formData.delete("fecha");
+
+      // Construir la URL. Si se ingresa una fecha, la convertimos de "YYYY-MM-DD" a "M/D/YYYY"
+      let url = "/api/sort-csv";
+      if (dateInput.value) {
+        const formattedDate = moment(dateInput.value, "YYYY-MM-DD").format("M/D/YYYY");
+        url += `?fecha=${encodeURIComponent(formattedDate)}`;
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          body: formData
+        });
+
+        loadingOverlay.classList.remove("visible");
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error al procesar el CSV:", errorText);
+          alert("Ocurrió un error al procesar el CSV.");
+          return;
+        }
+
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        downloadDiv.innerHTML = `<a href="${blobUrl}" download="sorted_data.csv">
+          Descarga tu CSV procesado</a>`;
+      } catch (error) {
+        loadingOverlay.classList.remove("visible");
+        console.error("Error en la solicitud:", error);
+        alert("Ocurrió un error en la solicitud.");
+      }
+    });
+  </script>
+</body>
+</html>
