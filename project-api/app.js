@@ -111,8 +111,8 @@ app.get('/api/me', authMiddleware, (req, res) => {
 app.post('/api/logout', (req, res) => {
   res.clearCookie('jwt', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax',
+    secure: true,
+    sameSite: 'None',
   });
   res.status(200).json({ success: true, message: 'Sesión cerrada' });
 });
