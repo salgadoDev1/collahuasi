@@ -60,7 +60,7 @@ async function insertarDatos(data) {
     };
 
     const chunks = chunkArray(values, batchSize);
-    const pool = await sql.connect();
+    const pool = await connectToDatabase();
 
     for (const chunk of chunks) {
       const query = `
@@ -92,8 +92,9 @@ async function insertarDatos(data) {
 
 async function getUserInDB() {
   try {
+    const pool = await connectToDatabase();
     const query = 'SELECT * FROM Usuarios WHERE estado = 1 ORDER BY id DESC';
-    const result = await sql.query(query);
+    const result = await pool.query(query);
     return result.recordset;
   } catch (error) {
     console.error('Error al obtener datos:', error);
@@ -102,8 +103,9 @@ async function getUserInDB() {
 }
 async function obtenerDatos() {
   try {
+    const pool = await connectToDatabase();
     const query = 'SELECT * FROM DatosMovimientos ORDER BY id DESC';
-    const result = await sql.query(query);
+    const result = await pool.query(query);
     return result.recordset;
   } catch (error) {
     console.error('Error al obtener datos:', error);
@@ -112,8 +114,9 @@ async function obtenerDatos() {
 }
 async function obtenerDatoscs() {
   try {
+    const pool = await connectToDatabase();
     const query = 'SELECT * FROM cs01_cs02_cs03 ORDER BY id DESC';
-    const result = await sql.query(query);
+    const result = await pool.query(query);
     return result.recordset;
   } catch (error) {
     console.error('Error al obtener datos:', error);
@@ -122,8 +125,9 @@ async function obtenerDatoscs() {
 }
 async function obtenerDatosMov() {
   try {
+    const pool = await connectToDatabase();
     const query = 'SELECT * FROM movimin_2 ORDER BY id DESC';
-    const result = await sql.query(query);
+    const result = await pool.query(query);
     return result.recordset;
   } catch (error) {
     console.error('Error al obtener datos:', error);
@@ -132,7 +136,8 @@ async function obtenerDatosMov() {
 }
 async function createUserInDB(nombre, email, perfil) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
 
     const result = await request
       .input('nombre', sql.NVarChar, nombre)
@@ -160,7 +165,8 @@ async function createUserInDB(nombre, email, perfil) {
 }
 const createAuthForUserInDB = async (authData) => {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
 
     request.input('fk_usuario_id', sql.Int, authData.fk_usuario_id);
     request.input('password', sql.NVarChar, authData.password);
@@ -196,8 +202,9 @@ const createAuthForUserInDB = async (authData) => {
 };
 async function updateUserInDB(id, data) {
   try {
+    const pool = await connectToDatabase();
     const fields = [];
-    const request = new sql.Request();
+    const request = pool.request();
 
     if (data.nombre) {
       fields.push('nombre = @nombre');
@@ -242,7 +249,8 @@ async function updateUserInDB(id, data) {
 }
 async function deleteUserInDB(id) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
     await request
       .input('id', sql.Int, id)
       .input('estado', sql.Int, 9)
@@ -305,7 +313,8 @@ async function getUserById(userId) {
 }
 async function updateRecoveryToken(userId, token, fechaToken) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
     await request
       .input('fk_usuario_id', sql.Int, userId)
       .input('token_recuperacion', sql.NVarChar, token)
@@ -322,7 +331,8 @@ async function updateRecoveryToken(userId, token, fechaToken) {
 }
 async function validateRecoveryToken(token) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
     const query = `
       SELECT fk_usuario_id, fecha_token 
       FROM Auth 
@@ -338,7 +348,8 @@ async function validateRecoveryToken(token) {
 }
 async function updatePassword(userId, hashedPassword, salt) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
     await request
       .input('fk_usuario_id', sql.Int, userId)
       .input('password', sql.NVarChar, hashedPassword)
@@ -691,7 +702,7 @@ async function insertarDatosMovimin(data) {
 }
 async function addColumnToDatosMovimientos(columnName, columnType) {
   try {
-    const pool = await sql.connect();
+    const pool = await connectToDatabase();
     const query = `ALTER TABLE DatosMovimientos ADD [${columnName}] ${columnType}`;
     await pool.request().query(query);
     console.log(
@@ -707,7 +718,7 @@ async function addColumnToDatosMovimientos(columnName, columnType) {
 }
 async function deleteExcelData(token) {
   try {
-    const pool = await sql.connect();
+    const pool = await connectToDatabase();
 
     await pool
       .request()
@@ -732,7 +743,7 @@ async function deleteExcelData(token) {
 }
 async function getTableColumns() {
   try {
-    const pool = await sql.connect();
+    const pool = await connectToDatabase();
     const query = `
       SELECT COLUMN_NAME
       FROM INFORMATION_SCHEMA.COLUMNS
@@ -752,13 +763,14 @@ async function getTableColumns() {
 }
 async function getUniqueFileNames() {
   try {
+    const pool = await connectToDatabase();
     const query = `
       SELECT DISTINCT token, nombre_archivo
       FROM DatosMovimientos
       WHERE nombre_archivo IS NOT NULL
       ORDER BY nombre_archivo
     `;
-    const result = await sql.query(query);
+    const result = await pool.query(query);
     return result.recordset;
   } catch (error) {
     console.error('Error al obtener nombres de archivo únicos:', error);
@@ -865,7 +877,7 @@ async function getReporte2(
   material = '',
   fase = '',
 ) {
-  const pool = await sql.connect();
+  const pool = await connectToDatabase();
 
   let whereClauses = [];
   if (origen) whereClauses.push(`Origen = @origen`);
@@ -956,7 +968,7 @@ async function getReporte2(
 }
 async function getReporteMinaVsPlanta(año, mes) {
   try {
-    const pool = await sql.connect();
+    const pool = await connectToDatabase();
     console.log(
       `Obteniendo datos para Reporte Mina vs Planta: año=${año}, mes=${mes}`,
     );
@@ -1074,7 +1086,7 @@ async function getReporteMinaVsPlanta(año, mes) {
 }
 
 async function getOrigenes() {
-  const pool = await sql.connect();
+  const pool = await connectToDatabase();
   const result = await pool.request().query(`
     SELECT DISTINCT Origen
     FROM DatosMovimientos
@@ -1084,7 +1096,7 @@ async function getOrigenes() {
   return result.recordset.map((row) => row.Origen);
 }
 async function getDestinos() {
-  const pool = await sql.connect();
+  const pool = await connectToDatabase();
   const result = await pool.request().query(`
     SELECT DISTINCT Destino
     FROM DatosMovimientos
@@ -1094,7 +1106,7 @@ async function getDestinos() {
   return result.recordset.map((row) => row.Destino);
 }
 async function getMateriales() {
-  const pool = await sql.connect();
+  const pool = await connectToDatabase();
   const result = await pool.request().query(`
     SELECT DISTINCT Material
     FROM DatosMovimientos
@@ -1104,7 +1116,7 @@ async function getMateriales() {
   return result.recordset.map((row) => row.Material);
 }
 async function getFase() {
-  const pool = await sql.connect();
+  const pool = await connectToDatabase();
   const result = await pool.request().query(`
     SELECT DISTINCT Fase
     FROM DatosMovimientos
@@ -1116,7 +1128,8 @@ async function getFase() {
 
 async function update2FAInDB(userId, totp_secret, totp_enabled) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
     await request
       .input('fk_usuario_id', sql.Int, userId)
       .input('totp_secret', sql.NVarChar, totp_secret)
