@@ -1,4 +1,4 @@
-const sql = require('mssql');
+const { sql, connectToDatabase } = require('../dbConfig');
 function chunkArray(array, size) {
   const chunks = [];
   for (let i = 0; i < array.length; i += size) {
@@ -255,7 +255,8 @@ async function deleteUserInDB(id) {
 }
 async function updateLoginTime(userId) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
     await request
       .input('UserId', sql.Int, userId)
       .query(
@@ -269,7 +270,8 @@ async function updateLoginTime(userId) {
 }
 async function getAuthByEmail(email) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
     const query = `
       SELECT a.fk_usuario_id, a.password, a.salt, a.totp_secret, a.totp_enabled
       FROM Auth a
@@ -286,7 +288,8 @@ async function getAuthByEmail(email) {
 }
 async function getUserById(userId) {
   try {
-    const request = new sql.Request();
+    const pool = await connectToDatabase();
+    const request = pool.request();
     const query = `
       SELECT id, nombre, email, perfil, estado
       FROM Usuarios

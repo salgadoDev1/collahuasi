@@ -14,18 +14,22 @@ const dbConfig = {
   },
 };
 
+let poolPromise;
+
 async function connectToDatabase() {
-  try {
-    if (sql.globalConnection && sql.globalConnection.connected) {
-      return sql.globalConnection;
-    }
-    const pool = await sql.connect(dbConfig);
-    console.log('Conexión exitosa a la base de datos');
-    return pool;
-  } catch (error) {
-    console.error('Error al conectar a la base de datos:', error);
-    throw error;
+  if (!poolPromise) {
+    poolPromise = sql.connect(dbConfig)
+      .then(pool => {
+        console.log('Conexión exitosa a la base de datos');
+        return pool;
+      })
+      .catch(err => {
+        console.error('Error al conectar a la base de datos:', err);
+        poolPromise = null; // Reset promise on error to allow retry
+        throw err;
+      });
   }
+  return poolPromise;
 }
 
 module.exports = {
