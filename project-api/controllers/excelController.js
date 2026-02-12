@@ -159,6 +159,7 @@ const processExcelFile = (
   startRow = 1,
   excludedColumns = [],
   maxRows = null,
+  forcedStartCol = null,
 ) => {
   const workbook = xlsx.read(buffer, { type: 'buffer' });
 
@@ -169,8 +170,24 @@ const processExcelFile = (
   const sheet = workbook.Sheets[sheetName];
   const range = xlsx.utils.decode_range(sheet['!ref']);
 
-  const DM_IDX = xlsx.utils.decode_col('DM');
-  const startCol = sheetName === 'CS01+CS02+CS03' ? DM_IDX : 0;
+  let startCol = 0;
+  if (forcedStartCol !== null) {
+    startCol = forcedStartCol;
+  } else if (sheetName === 'CS01+CS02+CS03') {
+    const DM_IDX = xlsx.utils.decode_col('DM');
+    const headerRowIdx = startRow - 1;
+    const cellDM = sheet[xlsx.utils.encode_cell({ r: headerRowIdx, c: DM_IDX })];
+    if (cellDM && cellDM.v && String(cellDM.v).toLowerCase().includes('fecha')) {
+      startCol = DM_IDX;
+    } else {
+      const cellA = sheet[xlsx.utils.encode_cell({ r: headerRowIdx, c: 0 })];
+      if (cellA && cellA.v && String(cellA.v).toLowerCase().includes('fecha')) {
+        startCol = 0;
+      } else {
+        startCol = DM_IDX; // Fallback
+      }
+    }
+  }
 
   const customRange = {
     s: { r: startRow - 1, c: startCol },
@@ -235,6 +252,8 @@ const processNewExcelFile = (
   normalizer,
   startRow = 1,
   maxRows = null,
+  forcedStartCol = 56,
+  forcedEndCol = 114,
 ) => {
   const workbook = xlsx.read(buffer, { type: 'buffer' });
 
@@ -245,8 +264,8 @@ const processNewExcelFile = (
   const sheet = workbook.Sheets[sheetName];
   const range = xlsx.utils.decode_range(sheet['!ref']);
   const customRange = {
-    s: { r: startRow - 1, c: 56 },
-    e: { r: range.e.r, c: 114 },
+    s: { r: startRow - 1, c: forcedStartCol },
+    e: { r: range.e.r, c: forcedEndCol },
   };
 
   const data = xlsx.utils.sheet_to_json(sheet, {
@@ -342,6 +361,25 @@ exports.uploadExcel = async (req, res) => {
       'Unnamed: 128',
       'Unnamed: 142',
     ];
+
+    // Detectamos el formato revisando dónde empieza la tabla CS
+    const workbookTmp = xlsx.read(buffer, { type: 'buffer' });
+    const sheetCS = workbookTmp.Sheets['CS01+CS02+CS03'];
+    let isFormat2 = false;
+    if (sheetCS) {
+      const DM_IDX = xlsx.utils.decode_col('DM');
+      const cellDM = sheetCS[xlsx.utils.encode_cell({ r: 1, c: DM_IDX })]; // Fila 2 index 1
+      if (!(cellDM && cellDM.v && String(cellDM.v).toLowerCase().includes('fecha'))) {
+        const cellA = sheetCS[xlsx.utils.encode_cell({ r: 1, c: 0 })];
+        if (cellA && cellA.v && String(cellA.v).toLowerCase().includes('fecha')) {
+          isFormat2 = true;
+          console.log('🟢 Formato 2 detectado (CS empieza en Columna A)');
+        }
+      } else {
+        console.log('🔵 Formato 1 detectado (CS empieza en Columna DM)');
+      }
+    }
+
     const dataHoja2 = processExcelFile(
       buffer,
       'CS01+CS02+CS03',
@@ -349,11 +387,12 @@ exports.uploadExcel = async (req, res) => {
       2,
       excludedColumns,
       31,
+      isFormat2 ? 0 : 116,
     );
 
     console.log(
       '🟢 Columnas después de normalizar CS:',
-      Object.keys(dataHoja2[0]),
+      Object.keys(dataHoja2[0] || {}),
     );
     console.log(
       '🔍 Primeros 5 registros normalizados CS:',
@@ -372,12 +411,19 @@ exports.uploadExcel = async (req, res) => {
 
     ////////////////////////////////////////////////////////////////
     // DATOS DE LA TABLA NUEVA PARA GUARDAR MOVIMIN
+    // Si es Formato 2, el bloque de Movimin suele estar también al principio o integrado.
+    // Usamos un rango amplio para Formato 2 y dejamos que el normalizador filtre.
+    const movStart = isFormat2 ? 0 : 56;
+    const movEnd = isFormat2 ? 150 : 114;
+
     const dataNuevos = processNewExcelFile(
       buffer,
       'CS01+CS02+CS03',
       normalizeColumnNameNewData,
       2,
       31,
+      movStart,
+      movEnd,
     );
 
     console.log(`🚀 Procesando nuevos datos: ${dataNuevos.length} registros`);
